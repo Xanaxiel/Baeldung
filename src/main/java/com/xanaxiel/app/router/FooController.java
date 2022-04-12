@@ -11,8 +11,6 @@ import reactor.core.publisher.Flux;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import static org.springframework.http.ResponseEntity.ok;
-
 @RequiredArgsConstructor
 @RestController
 @ResponseBody
@@ -21,16 +19,9 @@ public class FooController {
 
     @GetMapping(value = "/echo", produces = "text/event-stream")
     public Flux<?> echo() {
-        final Foo foo = Foo.defaultFoo();
-        return Flux.push(emitter -> {
-            while (!emitter.isCancelled()) {
-                log.info("Emitting: {}", foo);
-                emitter.next(ok(foo));
-            }
-            emitter.onCancel(() -> {
-                log.info("Cancelled");
-                emitter.complete();
-            });
-        }).delaySubscription(Duration.of(2L, ChronoUnit.SECONDS));
+        return Flux.just(Foo.defaultFoo())
+                .repeat()
+                .delayElements(Duration.of(1, ChronoUnit.SECONDS))
+                .doOnEach(f -> log.info("Sending: {}", f));
     }
 }
